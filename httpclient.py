@@ -69,7 +69,10 @@ class HTTPClient(object):
 
     def GET(self, url, args=None):
         code = 500
-        body = ""
+        body = "GET / HTTP/1.0\r\nHost: www.google.com\r\n\r\n"
+        self.sendall(body.encode())
+        fullData = self.recvall(self.socket)
+        print(fullData)
         return HTTPResponse(code, body)
 
     def POST(self, url, args=None):
