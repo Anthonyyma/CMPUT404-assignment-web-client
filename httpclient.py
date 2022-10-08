@@ -86,23 +86,60 @@ class HTTPClient(object):
         return HTTPResponse(code, body)
 
     def POST(self, url, args=None):
+        #https://stackoverflow.com/questions/28670835/python-socket-client-post-parameters
         code = 500
         hostPort = self.get_host_port(url)
         hostIp = self.get_host_ip(url)
-        body = f"POST / HTTP/1.1\r\nHost: {url}\r\n"
-        message = args
-        contentLength = "Content-Length: " + str(len(message) + "\r\n")
+        self.connect(hostIp, hostPort)
+
+        body = f"POST / HTTP/1.1\r\nHost: {hostIp}:{hostPort}\r\n"
+        content = "Content-Type: {content_type}\r\nContent-Length: {content_length}\r\nConnection: close\r\n\r\n"
+
+        message = 'userName=Ganesh&password=pass'                                 
+        header_bytes = content.format(
+            content_type="application/x-www-form-urlencoded",
+            content_length=len(body),
+        )
+        payload = body + header_bytes + message
+
+        self.sendall(payload)
+        self.socket.shutdown(socket.SHUT_WR)
+
+        fullData = self.recvall(self.socket)
+        print(fullData)
+
+
+
+
+
+
+
+        # body = "POST / HTTP/1.1\r\n"
+
+        # request = "testBody"
+        # request_bytes = body.encode()
+
+        # contentType = "Content-Type: application\r\n"
+        # contentLength = "Content-Length: " + str(len(request_bytes)) + "\r\n"
+        # hostUrl = f"Host: {url}\r\nConnection: close\r\n\r\n"
+
+
+        # message = args
+        # msgLength = "0"
+        # if message:
+        #     msgLength = str(len(message))
         # mimeString = mimetypes.guess_type("www" + filename)
         # response = "HTTP/1.1 200 OK\r\n" + "Host: 127.0.0.1:8080\r\nContent-Type: " + mimeString[0] + "\r\n\r\n" + data
-        contentType = "Content-Type: application\r\n"
+        # contentType = "Content-Type: application\r\n"
 
-        request = body + contentLength + contentType + "\r\n"
-        request = request + message
-        self.connect(hostIp, hostPort)
-        self.sendall(body)
+        # request = body + contentLength + contentype + "\r\n"
+        # if message:
+        #     request = request + message
+        # self.connect(hostIp, hostPort)
+        # self.sendall(body)
         # self.socket.shutdown(socket.SHUT_WR)
         # fullData = self.recvall(self.socket)
-        # code = int(fullData.split()[1])
+        code = int(fullData.split()[1])
         # print(fullData)
         self.socket.close()
         return HTTPResponse(code, body)
