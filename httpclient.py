@@ -86,7 +86,7 @@ class HTTPClient(object):
         hostPort = self.get_host_port(url)
         hostIp = self.get_host_ip(url)
         hostPath = self.get_host_path(url)
-        body = f"GET {hostPath} HTTP/1.1\r\nHost: {hostIp}:{hostPort}\r\n\r\n"
+        body = f"GET {hostPath} HTTP/1.1\r\nHost: {hostIp}:{hostPort}\r\nAccept: */*\r\nConnection: close\r\n\r\n"
         self.connect(hostIp, hostPort)
         self.sendall(body)
         fullData = self.recvall(self.socket)
@@ -105,7 +105,7 @@ class HTTPClient(object):
         if args:
             body = urllib.parse.urlencode(args)
         contentLength = str(len(body))
-        header = f"POST {hostPath} HTTP/1.1\r\nHost: {hostIp}:{hostPort}\r\nAccept:*/*\r\n"
+        header = f"POST {hostPath} HTTP/1.1\r\nHost: {hostIp}:{hostPort}\r\nAccept: */*\r\n"
         content = f"Content-Type: application/x-www-form-urlencoded\r\nContent-Length: {contentLength}\r\nConnection: close\r\n\r\n"
         payload = header + content + body
         self.sendall(payload)
