@@ -23,6 +23,7 @@ import socket
 import re
 # you may use urllib to encode data appropriately
 from urllib.parse import urlparse
+import urllib.parse
 
 def help():
     print("httpclient.py [GET/POST] [URL]\n")
@@ -34,11 +35,21 @@ class HTTPResponse(object):
 
 class HTTPClient(object):
     def get_host_port(self,url):
-        return int(urlparse(url).netloc.split(':')[1])
+        port = urlparse(url).port
+        if (port == None):
+            return 80
+        return int(port)
     
     def get_host_ip(self, url):
-        return urlparse(url).netloc.split(':')[0]
-
+        ip = urlparse(url).hostname
+        return ip
+    
+    def get_host_path(self, url):
+        path = urlparse(url).path
+        if len(path) == 0:
+            return '/'
+        return path
+            
     def connect(self, host, port):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect((host, port))
@@ -72,77 +83,37 @@ class HTTPClient(object):
         return buffer.decode('utf-8')
 
     def GET(self, url, args=None):
-        code = 500
         hostPort = self.get_host_port(url)
         hostIp = self.get_host_ip(url)
-        body = f"GET / HTTP/1.1\r\nHost: {url}\r\n\r\n"
+        hostPath = self.get_host_path(url)
+        body = f"GET {hostPath} HTTP/1.1\r\nHost: {hostIp}:{hostPort}\r\n\r\n"
         self.connect(hostIp, hostPort)
         self.sendall(body)
-        self.socket.shutdown(socket.SHUT_WR)
         fullData = self.recvall(self.socket)
         code = int(fullData.split()[1])
-        print(fullData)
+        print(code)
         self.socket.close()
         return HTTPResponse(code, body)
 
     def POST(self, url, args=None):
         #https://stackoverflow.com/questions/28670835/python-socket-client-post-parameters
-        code = 500
         hostPort = self.get_host_port(url)
         hostIp = self.get_host_ip(url)
+        hostPath = self.get_host_path(url)
         self.connect(hostIp, hostPort)
-
-        body = f"POST / HTTP/1.1\r\nHost: {hostIp}:{hostPort}\r\n"
-        content = "Content-Type: {content_type}\r\nContent-Length: {content_length}\r\nConnection: close\r\n\r\n"
-
-        message = 'userName=Ganesh&password=pass'                                 
-        header_bytes = content.format(
-            content_type="application/x-www-form-urlencoded",
-            content_length=len(body),
-        )
-        payload = body + header_bytes + message
-
+        body = ''
+        if args:
+            body = urllib.parse.urlencode(args)
+        contentLength = str(len(body))
+        header = f"POST {hostPath} HTTP/1.1\r\nHost: {hostIp}:{hostPort}\r\nAccept:*/*\r\n"
+        content = f"Content-Type: application/x-www-form-urlencoded\r\nContent-Length: {contentLength}\r\nConnection: close\r\n\r\n"
+        payload = header + content + body
         self.sendall(payload)
-        self.socket.shutdown(socket.SHUT_WR)
-
         fullData = self.recvall(self.socket)
-        print(fullData)
-
-
-
-
-
-
-
-        # body = "POST / HTTP/1.1\r\n"
-
-        # request = "testBody"
-        # request_bytes = body.encode()
-
-        # contentType = "Content-Type: application\r\n"
-        # contentLength = "Content-Length: " + str(len(request_bytes)) + "\r\n"
-        # hostUrl = f"Host: {url}\r\nConnection: close\r\n\r\n"
-
-
-        # message = args
-        # msgLength = "0"
-        # if message:
-        #     msgLength = str(len(message))
-        # mimeString = mimetypes.guess_type("www" + filename)
-        # response = "HTTP/1.1 200 OK\r\n" + "Host: 127.0.0.1:8080\r\nContent-Type: " + mimeString[0] + "\r\n\r\n" + data
-        # contentType = "Content-Type: application\r\n"
-
-        # request = body + contentLength + contentype + "\r\n"
-        # if message:
-        #     request = request + message
-        # self.connect(hostIp, hostPort)
-        # self.sendall(body)
-        # self.socket.shutdown(socket.SHUT_WR)
-        # fullData = self.recvall(self.socket)
         code = int(fullData.split()[1])
-        # print(fullData)
+        returnBody = fullData.split("\r\n\r\n")[1]
         self.socket.close()
-        return HTTPResponse(code, body)
+        return HTTPResponse(code, returnBody)
 
     def command(self, url, command="GET", args=None):
         if (command == "POST"):
