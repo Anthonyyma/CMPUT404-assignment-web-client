@@ -91,9 +91,9 @@ class HTTPClient(object):
         self.sendall(body)
         fullData = self.recvall(self.socket)
         code = int(fullData.split()[1])
-        print(code)
+        returnBody = fullData.split("\r\n\r\n")[1]
         self.socket.close()
-        return HTTPResponse(code, body)
+        return HTTPResponse(code, returnBody)
 
     def POST(self, url, args=None):
         #https://stackoverflow.com/questions/28670835/python-socket-client-post-parameters
