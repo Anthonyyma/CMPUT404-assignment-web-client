@@ -96,7 +96,6 @@ class HTTPClient(object):
         return HTTPResponse(code, returnBody)
 
     def POST(self, url, args=None):
-        #https://stackoverflow.com/questions/28670835/python-socket-client-post-parameters
         hostPort = self.get_host_port(url)
         hostIp = self.get_host_ip(url)
         hostPath = self.get_host_path(url)
